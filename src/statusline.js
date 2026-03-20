@@ -140,9 +140,8 @@ function buildStatusLine(input, config) {
   const linesAdded = input.cost?.total_lines_added || 0;
   const linesRemoved = input.cost?.total_lines_removed || 0;
 
-  // Calculate current context tokens from percentage and window size
-  const currentTokens = input.context_window?.current_usage?.input_tokens
-    || Math.round((usedPct / 100) * windowSize);
+  // Derive token count from percentage — current_usage.input_tokens is per-call, not total context
+  const currentTokens = Math.round((usedPct / 100) * windowSize);
 
   const thresholds = config.thresholds;
   const barColor = getBarColor(usedPct, thresholds);
