@@ -8,6 +8,8 @@ Beautiful context window status bar for Claude Code CLI.
 
 Shows your model, context usage with a colored progress bar, token counts, and session cost — all at a glance below the chat input.
 
+Works on **Windows, macOS, and Linux** — `setup` detects your OS, copies the statusline into `~/.claude/context-bar-statusline.js`, and wires up the correct `node` command automatically.
+
 ## Features
 
 - **Colored progress bar** — green → yellow → red as context fills up
@@ -29,9 +31,10 @@ That's it. Restart Claude Code and the status bar appears.
 
 ### What setup does
 
-1. Detects any existing statusline and saves it for chaining
-2. Sets `claude-context-bar` as your statusline in `~/.claude/settings.json`
-3. Creates a config file at `~/.claude/context-bar.json`
+1. Detects your OS and any existing statusline (saved for chaining)
+2. Copies the statusline script to `~/.claude/context-bar-statusline.js`
+3. Sets `claude-context-bar` as your statusline in `~/.claude/settings.json`
+4. Creates a config file at `~/.claude/context-bar.json`
 
 ### Global install (optional)
 

@@ -4,13 +4,17 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execSync } = require('child_process');
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
 const SETTINGS_PATH = path.join(CLAUDE_DIR, 'settings.json');
 const CONFIG_PATH = path.join(CLAUDE_DIR, 'context-bar.json');
-const STATUSLINE_SCRIPT = path.resolve(__dirname, '..', 'src', 'statusline.js');
+// Source lives inside the package (node_modules / npx cache — may be transient).
+const STATUSLINE_SRC = path.resolve(__dirname, '..', 'src', 'statusline.js');
+// We copy it here so the install survives after npx cache is cleared, on every OS.
+const STATUSLINE_DEST = path.join(CLAUDE_DIR, 'context-bar-statusline.js');
 
 // ─── ANSI ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +50,36 @@ function normalizePath(p) {
   return p.replace(/\\/g, '/');
 }
 
+// ─── Platform detection ──────────────────────────────────────────────────────
+
+function detectPlatform() {
+  switch (process.platform) {
+    case 'win32':  return { id: 'win32',  label: 'Windows' };
+    case 'darwin': return { id: 'darwin', label: 'macOS' };
+    case 'linux':  return { id: 'linux',  label: 'Linux' };
+    default:       return { id: process.platform, label: process.platform };
+  }
+}
+
+// Resolve how to invoke Node from Claude Code's statusline command.
+// Prefer a bare `node` (clean, portable) when it's on PATH; otherwise fall back
+// to the absolute path of the Node binary running this installer. This matters
+// on Windows, where the process that runs the statusline may not inherit `node`
+// on its PATH.
+function resolveNodeCommand() {
+  const probe = process.platform === 'win32' ? 'where node' : 'command -v node';
+  try {
+    execSync(probe, { stdio: 'ignore' });
+    return 'node';
+  } catch {
+    return `"${normalizePath(process.execPath)}"`;
+  }
+}
+
+function buildStatuslineCommand() {
+  return `${resolveNodeCommand()} "${normalizePath(STATUSLINE_DEST)}"`;
+}
+
 // ─── Setup ───────────────────────────────────────────────────────────────────
 
 function setup() {
@@ -54,10 +88,19 @@ function setup() {
   console.log(`  ${C.dim}${'─'.repeat(40)}${C.reset}`);
   console.log('');
 
+  // Detect the OS so the user can see what we configured for
+  const platform = detectPlatform();
+  console.log(`  ${C.cyan}→${C.reset} Detected platform: ${C.brightWhite}${platform.label}${C.reset}`);
+
   // Ensure .claude directory exists
   if (!fs.existsSync(CLAUDE_DIR)) {
     fs.mkdirSync(CLAUDE_DIR, { recursive: true });
   }
+
+  // Copy the statusline script into ~/.claude so the install persists even after
+  // the npx cache is cleared — works identically on Windows, macOS, and Linux.
+  fs.copyFileSync(STATUSLINE_SRC, STATUSLINE_DEST);
+  console.log(`  ${C.green}→${C.reset} Installed statusline to ${C.dim}~/.claude/context-bar-statusline.js${C.reset}`);
 
   // Read current settings
   const settings = readJSON(SETTINGS_PATH);
@@ -65,7 +108,7 @@ function setup() {
 
   // Detect and save existing statusline for chaining
   const existingCmd = settings.statusLine?.command;
-  const ourCmd = `node "${normalizePath(STATUSLINE_SCRIPT)}"`;
+  const ourCmd = buildStatuslineCommand();
 
   if (existingCmd && !existingCmd.includes('context-bar')) {
     config.chainCommand = existingCmd;
@@ -143,6 +186,14 @@ function uninstall() {
   try {
     fs.unlinkSync(CONFIG_PATH);
     console.log(`  ${C.cyan}→${C.reset} Removed config file`);
+  } catch {
+    // Already gone
+  }
+
+  // Remove the copied statusline script
+  try {
+    fs.unlinkSync(STATUSLINE_DEST);
+    console.log(`  ${C.cyan}→${C.reset} Removed statusline script`);
   } catch {
     // Already gone
   }
