@@ -23,11 +23,27 @@ Works on **Windows, macOS, and Linux** — `setup` detects your OS, copies the s
 
 ## Install
 
+Clone the repo and run setup. This is the recommended method — installing via `npm`/`npx` is **not** supported, because the `claude-context-bar` name on the npm registry belongs to a different, unrelated package.
+
+**macOS / Linux:**
+
 ```bash
-npx claude-context-bar setup
+git clone https://github.com/backyarddd/claude-context-bar.git
+cd claude-context-bar
+node bin/cli.js setup
+```
+
+**Windows (PowerShell):**
+
+```powershell
+git clone https://github.com/backyarddd/claude-context-bar.git
+cd claude-context-bar
+node bin/cli.js setup
 ```
 
 That's it. Restart Claude Code and the status bar appears.
+
+Setup copies the statusline into `~/.claude/context-bar-statusline.js`, so the install keeps working even if you move or delete the cloned folder afterward.
 
 ### What setup does
 
@@ -36,17 +52,21 @@ That's it. Restart Claude Code and the status bar appears.
 3. Sets `claude-context-bar` as your statusline in `~/.claude/settings.json`
 4. Creates a config file at `~/.claude/context-bar.json`
 
-### Global install (optional)
+## Update
+
+Pull the latest and re-run setup to refresh the installed script:
 
 ```bash
-npm install -g claude-context-bar
-claude-context-bar setup
+git pull
+node bin/cli.js setup
 ```
 
 ## Uninstall
 
+From the cloned folder:
+
 ```bash
-npx claude-context-bar uninstall
+node bin/cli.js uninstall
 ```
 
 Restores your previous statusline if one existed.
@@ -114,12 +134,14 @@ To manually set a chain:
 
 ## CLI Commands
 
+Run from the cloned folder:
+
 ```bash
-npx claude-context-bar setup      # Install and configure
-npx claude-context-bar uninstall  # Remove and restore previous
-npx claude-context-bar config     # Show current configuration
-npx claude-context-bar preview    # Preview the status bar styles
-npx claude-context-bar            # Show help
+node bin/cli.js setup      # Install and configure
+node bin/cli.js uninstall  # Remove and restore previous
+node bin/cli.js config     # Show current configuration
+node bin/cli.js preview    # Preview the status bar styles
+node bin/cli.js            # Show help
 ```
 
 ## How it works

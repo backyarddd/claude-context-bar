@@ -149,7 +149,7 @@ function setup() {
   console.log(`  ${C.green}${C.bold}✓ Done!${C.reset} Restart Claude Code to see your status bar.`);
   console.log('');
   console.log(`  ${C.dim}Customize:  Edit ~/.claude/context-bar.json${C.reset}`);
-  console.log(`  ${C.dim}Remove:     npx claude-context-bar uninstall${C.reset}`);
+  console.log(`  ${C.dim}Remove:     node bin/cli.js uninstall${C.reset}`);
   console.log('');
 
   // Show preview
@@ -227,7 +227,7 @@ function showConfig() {
 
   const config = readJSON(CONFIG_PATH);
   if (Object.keys(config).length === 0) {
-    console.log(`  ${C.yellow}No config found.${C.reset} Run ${C.cyan}npx claude-context-bar setup${C.reset} first.`);
+    console.log(`  ${C.yellow}No config found.${C.reset} Run ${C.cyan}node bin/cli.js setup${C.reset} first.`);
   } else {
     console.log(`  ${C.dim}${CONFIG_PATH}${C.reset}`);
     console.log('');
@@ -253,11 +253,11 @@ function showHelp() {
   console.log(`  ${C.brightCyan}${C.bold}◆ claude-context-bar${C.reset}`);
   console.log(`  ${C.dim}Beautiful context window status bar for Claude Code${C.reset}`);
   console.log('');
-  console.log(`  ${C.bold}Usage:${C.reset}`);
-  console.log(`    npx claude-context-bar ${C.green}setup${C.reset}       Install and configure`);
-  console.log(`    npx claude-context-bar ${C.green}uninstall${C.reset}   Remove and restore previous`);
-  console.log(`    npx claude-context-bar ${C.green}config${C.reset}      Show current configuration`);
-  console.log(`    npx claude-context-bar ${C.green}preview${C.reset}     Preview the status bar`);
+  console.log(`  ${C.bold}Usage:${C.reset} ${C.dim}(run from the cloned folder)${C.reset}`);
+  console.log(`    node bin/cli.js ${C.green}setup${C.reset}       Install and configure`);
+  console.log(`    node bin/cli.js ${C.green}uninstall${C.reset}   Remove and restore previous`);
+  console.log(`    node bin/cli.js ${C.green}config${C.reset}      Show current configuration`);
+  console.log(`    node bin/cli.js ${C.green}preview${C.reset}     Preview the status bar`);
   console.log('');
   console.log(`  ${C.bold}Config:${C.reset} ${C.dim}~/.claude/context-bar.json${C.reset}`);
   console.log('');
