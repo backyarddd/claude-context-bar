@@ -23,7 +23,7 @@ Works on **Windows, macOS, and Linux** — `setup` detects your OS, copies the s
 
 ## Install
 
-Clone the repo and run setup. This is the recommended method — installing via `npm`/`npx` is **not** supported, because the `claude-context-bar` name on the npm registry belongs to a different, unrelated package.
+Clone the repo and run setup. This is the recommended method — installing via `npm`/`npx` is **not** supported, because the `claude-context-bar` name on the npm registry belongs to a different, unrelated package. All `node bin/cli.js` commands below run from the cloned folder.
 
 **macOS / Linux:**
 
@@ -62,8 +62,6 @@ node bin/cli.js setup
 ```
 
 ## Uninstall
-
-From the cloned folder:
 
 ```bash
 node bin/cli.js uninstall
@@ -116,9 +114,11 @@ The progress bar changes color based on context usage:
 | Range | Color | Meaning |
 |-------|-------|---------|
 | 0–49% | Green | Healthy |
-| 50–69% | Yellow | Moderate |
-| 70–84% | Red | High usage |
-| 85–100% | Bright Red + ⚠ | Critical — approaching auto-compact |
+| 50–69% | Bright yellow | Moderate |
+| 70–84% | Yellow | High usage |
+| 85–100% | Bright red + ⚠ | Critical — approaching auto-compact |
+
+If `~/.claude/context-bar.json` is not valid JSON, the bar falls back to defaults and shows a red `config?` marker.
 
 ### Chaining
 
@@ -134,8 +134,6 @@ To manually set a chain:
 
 ## CLI Commands
 
-Run from the cloned folder:
-
 ```bash
 node bin/cli.js setup      # Install and configure
 node bin/cli.js uninstall  # Remove and restore previous
@@ -150,7 +148,6 @@ Claude Code pipes JSON session data to the statusline command's stdin on every u
 
 - `context_window.used_percentage` — how full your context is
 - `context_window.context_window_size` — max tokens (200K, 1M, etc.)
-- `context_window.current_usage.input_tokens` — current token count
 - `model.display_name` — active model name
 - `cost.total_cost_usd` — running session cost
 - `rate_limits` — API rate limit status

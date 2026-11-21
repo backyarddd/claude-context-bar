@@ -32,8 +32,9 @@ function loadConfig() {
       ...user,
       thresholds: { ...DEFAULTS.thresholds, ...user.thresholds },
     };
-  } catch {
-    return { ...DEFAULTS };
+  } catch (e) {
+    // Missing file is normal; a broken one is flagged so the bar can say so.
+    return { ...DEFAULTS, configError: e.code !== 'ENOENT' };
   }
 }
 
@@ -46,13 +47,8 @@ const C = {
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
-  white: '\x1b[37m',
   brightRed: '\x1b[91m',
-  brightGreen: '\x1b[92m',
   brightYellow: '\x1b[93m',
-  brightCyan: '\x1b[96m',
   brightWhite: '\x1b[97m',
 };
 
@@ -115,10 +111,11 @@ function prettifyModelName(raw) {
   }
 
   // Model ID like "claude-opus-4-6" or "claude-sonnet-4-5-20241022"
-  const idMatch = raw.match(/claude-(\w+)-(\d+)-(\d+)(?:-\d+)?/i);
+  // Minor is 1-2 digits; an 8-digit date after the major (claude-opus-4-20250514) is not a minor.
+  const idMatch = raw.match(/claude-(\w+)-(\d+)(?:-(\d{1,2})(?!\d))?(?:-\d{8})?/i);
   if (idMatch) {
     const family = idMatch[1].charAt(0).toUpperCase() + idMatch[1].slice(1);
-    return `${family} ${idMatch[2]}.${idMatch[3]}`;
+    return `${family} ${idMatch[2]}${idMatch[3] ? '.' + idMatch[3] : ''}`;
   }
 
   // Fallback: strip "claude-" prefix and capitalize
@@ -150,22 +147,16 @@ function buildStatusLine(input, config) {
   // ── Indicator + Model ──
   if (config.showModel) {
     const indicator = getIndicator(usedPct, thresholds);
-    if (config.compactMode) {
-      // Short model name: "Opus 4.6" → "O4.6", "Sonnet 4.6" → "S4.6"
-      const short = (modelName
-        .replace(/^Claude\s+/i, '')
-        .replace(/Opus/i, 'O')
-        .replace(/Sonnet/i, 'S')
-        .replace(/Haiku/i, 'H')) || modelName;
-      parts.push(`${indicator} ${C.bold}${C.brightWhite}${short}${C.reset}`);
-    } else {
-      const clean = modelName.replace(/^Claude\s+/i, '') || modelName;
-      parts.push(`${indicator} ${C.bold}${C.brightWhite}${clean}${C.reset}`);
-    }
+    // compactMode: "Opus 4.6" → "O 4.6"
+    const label = config.compactMode
+      ? modelName.replace(/Opus/i, 'O').replace(/Sonnet/i, 'S').replace(/Haiku/i, 'H')
+      : modelName;
+    parts.push(`${indicator} ${C.bold}${C.brightWhite}${label}${C.reset}`);
   }
 
   // ── Progress Bar + Percentage ──
-  const bar = renderBar(usedPct, config.barWidth, thresholds);
+  const barWidth = Math.max(0, Math.floor(Number(config.barWidth)) || 20);
+  const bar = renderBar(usedPct, barWidth, thresholds);
   const pctStr = `${barColor}${C.bold}${usedPct}%${C.reset}`;
   parts.push(`${bar} ${pctStr}`);
 
@@ -204,6 +195,8 @@ function buildStatusLine(input, config) {
       parts.push(`${rateColor}Rate: ${Math.round(maxRate)}%${C.reset}`);
     }
   }
+
+  if (config.configError) parts.push(`${C.brightRed}config?${C.reset}`);
 
   return parts.join(sep);
 }
@@ -251,7 +244,7 @@ async function main() {
       const output = execSync(config.chainCommand, {
         input: raw,
         encoding: 'utf8',
-        timeout: 3000,
+        timeout: 1000, // a hung chained tool must not hold the bar back
         windowsHide: true,
         stdio: ['pipe', 'pipe', 'pipe'],
       });
@@ -264,4 +257,8 @@ async function main() {
   }
 }
 
-main().then(() => process.exit(0));
+if (require.main === module) {
+  main().then(() => process.exit(0));
+}
+
+module.exports = { prettifyModelName, formatTokens, renderBar, getBarColor, buildStatusLine, DEFAULTS };
