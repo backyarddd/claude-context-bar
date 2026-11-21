@@ -1,12 +1,14 @@
 {
   "name": "claude-context-bar",
   "version": "1.0.0",
+  "private": true,
   "description": "Beautiful context window status bar for Claude Code CLI — shows model, context usage, colored progress bar, cost, and more",
   "main": "src/statusline.js",
   "bin": {
     "claude-context-bar": "bin/cli.js"
   },
   "scripts": {
+    "test": "node --test test/",
     "setup": "node bin/cli.js setup",
     "uninstall": "node bin/cli.js uninstall"
   },
@@ -23,15 +25,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/backyarddd/claude-context-bar.git"
   },
   "engines": {
     "node": ">=16.0.0"
-  },
-  "files": [
-    "bin/",
-    "src/",
-    "README.md",
-    "LICENSE"
-  ]
+  }
 }

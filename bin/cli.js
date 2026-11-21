@@ -5,15 +5,16 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
+const { DEFAULTS } = require('../src/statusline');
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
 const SETTINGS_PATH = path.join(CLAUDE_DIR, 'settings.json');
 const CONFIG_PATH = path.join(CLAUDE_DIR, 'context-bar.json');
-// Source lives inside the package (node_modules / npx cache — may be transient).
+// Source lives in the cloned repo.
 const STATUSLINE_SRC = path.resolve(__dirname, '..', 'src', 'statusline.js');
-// We copy it here so the install survives after npx cache is cleared, on every OS.
+// We copy it here so the install survives if the clone is moved or deleted.
 const STATUSLINE_DEST = path.join(CLAUDE_DIR, 'context-bar-statusline.js');
 
 // ─── ANSI ────────────────────────────────────────────────────────────────────
@@ -37,6 +38,18 @@ function readJSON(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch {
     return {};
+  }
+}
+
+// Settings hold the user's other Claude Code config: a missing file is fine,
+// but an unparsable one must stop us, or we would overwrite it with `{}`.
+function readSettings() {
+  if (!fs.existsSync(SETTINGS_PATH)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+  } catch (e) {
+    console.error(`\n  ${C.red}✗${C.reset} ${SETTINGS_PATH} is not valid JSON (${e.message}).\n    Fix it first; nothing was changed.\n`);
+    process.exit(1);
   }
 }
 
@@ -97,13 +110,13 @@ function setup() {
     fs.mkdirSync(CLAUDE_DIR, { recursive: true });
   }
 
-  // Copy the statusline script into ~/.claude so the install persists even after
-  // the npx cache is cleared — works identically on Windows, macOS, and Linux.
+  // Copy the statusline script into ~/.claude so the install persists even if
+  // the clone is moved or deleted — works identically on Windows, macOS, and Linux.
   fs.copyFileSync(STATUSLINE_SRC, STATUSLINE_DEST);
   console.log(`  ${C.green}→${C.reset} Installed statusline to ${C.dim}~/.claude/context-bar-statusline.js${C.reset}`);
 
   // Read current settings
-  const settings = readJSON(SETTINGS_PATH);
+  const settings = readSettings();
   const config = readJSON(CONFIG_PATH);
 
   // Detect and save existing statusline for chaining
@@ -129,19 +142,7 @@ function setup() {
   console.log(`  ${C.green}→${C.reset} Status line configured in ${C.dim}settings.json${C.reset}`);
 
   // Write config with defaults for any missing keys
-  const defaults = {
-    barWidth: 20,
-    showModel: true,
-    showTokens: true,
-    showCost: true,
-    showDuration: false,
-    showRateLimit: false,
-    showLinesChanged: false,
-    compactMode: false,
-    thresholds: { green: 50, yellow: 70, red: 85 },
-  };
-
-  const merged = { ...defaults, ...config, thresholds: { ...defaults.thresholds, ...config.thresholds } };
+  const merged = { ...DEFAULTS, ...config, thresholds: { ...DEFAULTS.thresholds, ...config.thresholds } };
   writeJSON(CONFIG_PATH, merged);
   console.log(`  ${C.green}→${C.reset} Config saved to ${C.dim}~/.claude/context-bar.json${C.reset}`);
 
@@ -164,8 +165,15 @@ function uninstall() {
   console.log(`  ${C.dim}${'─'.repeat(40)}${C.reset}`);
   console.log('');
 
-  const settings = readJSON(SETTINGS_PATH);
+  const settings = readSettings();
   const config = readJSON(CONFIG_PATH);
+
+  // Never touch a statusline that isn't ours
+  if (!settings.statusLine?.command?.includes('context-bar')) {
+    console.log(`  ${C.yellow}→${C.reset} Not installed — nothing to remove.`);
+    console.log('');
+    return;
+  }
 
   // Restore chained statusline if one was saved
   if (config.chainCommand) {
